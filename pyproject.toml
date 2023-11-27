@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "azo_ki"
+description = "The Azoteq Keyboard Interface for IQS9320, IQS7220A, and IQS7320A devices."
+version = "0.1.0"
+authors = [
+    { name = "hennie", email = "hennie.vanderwesthuizen@azoteq.com"}
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
