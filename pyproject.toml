@@ -1,14 +1,17 @@
-[build-system]
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "azo_ki"
 description = "The Azoteq Keyboard Interface for IQS9320, IQS7220A, and IQS7320A devices."
-version = "0.1.0"
-authors = [
-    { name = "hennie", email = "hennie.vanderwesthuizen@azoteq.com"}
+version = "0.2.0"
+maintainers = [
+  { name = "hennie", email = "hennie.vanderwesthuizen@azoteq.com" },
 ]
 readme = "README.md"
-license = {file = "LICENSE"}
 requires-python = ">=3.10"
+dependencies = ["pyserial"]
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project.license]
+file = "LICENSE"

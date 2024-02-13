@@ -1,10 +1,13 @@
-# Introduction
+# Azoteq Keyboard Interface
+
+## Introduction
 
 Developed for interaction with the Azoteq KeyboardInterface Arduino project.
 
-# Examples
+## Examples
 
-## IQS9320 I2C Example
+### IQS9320 I2C Example
+
 ```
 from azo_ki import KeyboardInterface
 
@@ -45,7 +48,8 @@ for i in range(sample_size):
     data_2_3 = data[16:18]  # 0x2000 data for device 0x34
 ```
 
-## IQS7220A Example
+### IQS7220A Example
+
 ```
 from azo_ki import KeyboardInterface
 

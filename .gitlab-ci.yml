@@ -1,0 +1,79 @@
+stages:
+  - check
+  - test
+  - deploy
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_ROOT_USER_ACTION: ignore
+
+lint:
+  image: python:3.10
+  stage: check
+  before_script: python -m pip install tox
+  script: python -m tox run -e lint
+  only:
+    - master
+    - tags
+
+format:
+  image: python:3.10
+  stage: check
+  before_script: python -m pip install tox
+  script: python -m tox run -e format
+  only:
+    - master
+    - tags
+
+type-check:
+  image: python:3.10
+  stage: check
+  before_script: python -m pip install tox
+  script: python -m tox run -e type
+  only:
+    - master
+    - tags
+
+test-py310:
+  image: python:3.10
+  stage: test
+  before_script: python -m pip install tox
+  script: python -m tox run -e py310
+  only:
+    - master
+    - tags
+
+test-py311:
+  image: python:3.11
+  stage: test
+  before_script: python -m pip install tox
+  script: python -m tox run -e py311
+  only:
+    - master
+    - tags
+
+test-py312:
+  image: python:3.12
+  stage: test
+  before_script: python -m pip install tox
+  script: python -m tox run -e py312
+  only:
+    - master
+    - tags
+
+deploy-devpi:
+  image: python:3.10
+  stage: deploy
+  variables:
+    DEVPI_GITLAB_PASSWORD: $DEVPI_GITLAB_PASSWORD
+  before_script:
+    - python -m pip install --trusted-host pypi.local --index-url http://pypi.local/gitlab/stable appi
+    - python -m pip install build devpi-client
+  script:
+    - python -m appi patch-version
+    - python -m build --outdir ./dist .
+    - python -m devpi use http://pypi.local/gitlab/stable
+    - python -m devpi login gitlab --password "$DEVPI_GITLAB_PASSWORD"
+    - python -m devpi upload --from-dir ./dist
+  only:
+    - tags

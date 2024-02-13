@@ -1,44 +1,46 @@
+from enum import IntEnum
+
 import serial
 import serial.tools.list_ports as list_ports
-from enum import Enum
 
-class KeyboardInterface():
 
-    class commands(Enum):
+class KeyboardInterface:
+    class commands(IntEnum):
+        # fmt: off
         # General Commands
-        cmd_setup                               = 0x00
-        cmd_stop_streaming                      = 0x01
-        cmd_stop_serial_comms                   = 0x02
+        cmd_setup               = 0x00
+        cmd_stop_streaming      = 0x01
+        cmd_stop_serial_comms   = 0x02
 
         # IQS7220A
-        cmd_iqs7220a_ks                         = 0x10
-        cmd_iqs7220a_i2c_read_single            = 0x11
-        cmd_iqs7220a_i2c_write_single           = 0x12
-        cmd_iqs7220a_i2c_read_multi             = 0x13
-        cmd_iqs7220a_i2c_write_multi            = 0x14
-        cmd_iqs7220a_stream_ks                  = 0x15
-        cmd_iqs7220a_stream_i2c_read_single     = 0x16
-        cmd_iqs7220a_stream_i2c_read_multi      = 0x17
+        cmd_iqs7220a_ks                     = 0x10
+        cmd_iqs7220a_i2c_read_single        = 0x11
+        cmd_iqs7220a_i2c_write_single       = 0x12
+        cmd_iqs7220a_i2c_read_multi         = 0x13
+        cmd_iqs7220a_i2c_write_multi        = 0x14
+        cmd_iqs7220a_stream_ks              = 0x15
+        cmd_iqs7220a_stream_i2c_read_single = 0x16
+        cmd_iqs7220a_stream_i2c_read_multi  = 0x17
 
         # IQS7320A
-        cmd_iqs7320a_ks                         = 0x20
-        cmd_iqs7320a_i2c_read_single            = 0x21
-        cmd_iqs7320a_i2c_write_single           = 0x22
-        cmd_iqs7320a_i2c_read_multi             = 0x23
-        cmd_iqs7320a_i2c_write_multi            = 0x24
-        cmd_iqs7320a_autonomous_mode            = 0x25
-        cmd_iqs7320a_standby_mode               = 0x26
-        cmd_iqs7320a_stream_ks                  = 0x27
-        cmd_iqs7320a_stream_i2c_read_single     = 0x28
-        cmd_iqs7320a_stream_i2c_read_multi      = 0x29
+        cmd_iqs7320a_ks                     = 0x20
+        cmd_iqs7320a_i2c_read_single        = 0x21
+        cmd_iqs7320a_i2c_write_single       = 0x22
+        cmd_iqs7320a_i2c_read_multi         = 0x23
+        cmd_iqs7320a_i2c_write_multi        = 0x24
+        cmd_iqs7320a_autonomous_mode        = 0x25
+        cmd_iqs7320a_standby_mode           = 0x26
+        cmd_iqs7320a_stream_ks              = 0x27
+        cmd_iqs7320a_stream_i2c_read_single = 0x28
+        cmd_iqs7320a_stream_i2c_read_multi  = 0x29
 
         # IQS9320 - I2C
-        cmd_iqs9320_i2c_read_single             = 0x30
-        cmd_iqs9320_i2c_write_single            = 0x31
-        cmd_iqs9320_i2c_read_multi              = 0x32
-        cmd_iqs9320_i2c_write_multi             = 0x33
-        cmd_iqs9320_stream_i2c_read_single      = 0x34
-        cmd_iqs9320_stream_i2c_read_multi       = 0x35
+        cmd_iqs9320_i2c_read_single         = 0x30
+        cmd_iqs9320_i2c_write_single        = 0x31
+        cmd_iqs9320_i2c_read_multi          = 0x32
+        cmd_iqs9320_i2c_write_multi         = 0x33
+        cmd_iqs9320_stream_i2c_read_single  = 0x34
+        cmd_iqs9320_stream_i2c_read_multi   = 0x35
 
         # IQS9320 - Key Scan
         cmd_iqs9320_ks                          = 0x40
@@ -50,26 +52,27 @@ class KeyboardInterface():
         cmd_iqs9320_ks_stream_ks                = 0x46
         cmd_iqs9320_ks_stream_i2c_read_single   = 0x47
         cmd_iqs9320_ks_stream_i2c_read_multi    = 0x48
+        # fmt: on
 
-    class device_select_e(Enum):
-        device_iqs7220a     = 0
-        device_iqs7320a     = 1
-        device_iqs9320_i2c  = 2
-        device_iqs9320_ks   = 3
+    class device_select_e(IntEnum):
+        device_iqs7220a = 0
+        device_iqs7320a = 1
+        device_iqs9320_i2c = 2
+        device_iqs9320_ks = 3
 
     # ------------------------------------
     # Constructor, Destructor, other helper functions
     # ------------------------------------
 
-    def __init__(self, platform, num_columns=1, num_rows=1, device_address=None):
-        self.__pid          = [0xF00A, 0x000A, 0xCAFE]
-        self.__vid          = [0x2E8A, 0x239A]
-        self.packet_byte_a  = 0xCC
-        self.packet_byte_b  = 0xEF
-        self.command_id     = 0
-        self.platform       = platform
-        self.num_columns    = num_columns
-        self.num_rows       = num_rows
+    def __init__(self, device, num_columns=1, num_rows=1, device_address=None):
+        self.__pid = [0xF00A, 0x000A, 0xCAFE]
+        self.__vid = [0x2E8A, 0x239A]
+        self.packet_byte_a = 0xCC
+        self.packet_byte_b = 0xEF
+        self.command_id = 0
+        self.device = device
+        self.num_columns = num_columns
+        self.num_rows = num_rows
         self.device_address = device_address
 
         self.num_devices = self.num_columns * self.num_rows
@@ -79,24 +82,26 @@ class KeyboardInterface():
         else:
             raise Exception("Unable to connect to Raspberry Pi Pico W")
 
-        self.setup(platform, num_columns, num_rows)
+        self.setup(device, num_columns, num_rows)
 
     def __del__(self):
         try:
             self.stop_serial_comms()
             self.serial_conn.close()
-        except:
+        except:  # noqa
             pass
 
     def __find_devices(self):
         for port in list_ports.comports():
             print(port, ", pid = ", port.pid, ", vid = ", port.vid)
-            if (port.vid in self.__vid and port.pid in self.__pid):
-                self.serial_conn = serial.Serial(port.device, baudrate=115200, timeout=0.5)
+            if port.vid in self.__vid and port.pid in self.__pid:
+                self.serial_conn = serial.Serial(
+                    port.device, baudrate=115200, timeout=0.5
+                )
                 print("Serial port open")
                 return True
         return False
-    
+
     def get_crc(self, data_array):
         crc = 0xFFFF
         j = 0
@@ -114,9 +119,9 @@ class KeyboardInterface():
                     crc = crc << 1
                     crc = crc & 0xFFFF
                 j += 1
-        
+
         return crc
-    
+
     def send_command(self, command_bytes):
         # Get 8-bit command ID
         self.command_id += 1
@@ -125,11 +130,11 @@ class KeyboardInterface():
 
         # Compile packet
         total_packet = [
-                        self.packet_byte_a,
-                        self.packet_byte_b,
-                        len(command_bytes)+1,
-                        self.command_id
-                        ]
+            self.packet_byte_a,
+            self.packet_byte_b,
+            len(command_bytes) + 1,
+            self.command_id,
+        ]
         for byte in command_bytes:
             total_packet.append(byte)
 
@@ -142,12 +147,12 @@ class KeyboardInterface():
 
         # Write packet
         self.serial_conn.read_all()
-        self.serial_conn.write(total_packet)
+        self.serial_conn.write(bytes(total_packet))
 
         # Await packet response
         await_A = True
         bytes_read = 0
-        while(await_A):
+        while await_A:
             read_value = int(self.serial_conn.read()[0])
             bytes_read += 1
             if read_value == self.packet_byte_a:
@@ -158,7 +163,7 @@ class KeyboardInterface():
         read_values = [int(x) for x in read_values]
 
         # Verify packet
-        if(len(read_values) == 5):
+        if len(read_values) == 5:
             packet_fail = False
             if not (read_values[0] == self.packet_byte_b):
                 print("\033[91m Byte B 1 error \033[0m")
@@ -181,15 +186,19 @@ class KeyboardInterface():
             print("\033[91m Serial timeout \033[0m")
             packet_fail = True
         if packet_fail:
-            raise Exception("Packet transmission failed : {} : {}".format(self.command_id, command_bytes[0]))
+            raise Exception(
+                "Packet transmission failed : {} : {}".format(
+                    self.command_id, command_bytes[0]
+                )
+            )
 
     def generic_return(self):
         read_values = self.serial_conn.read(4)
         read_values = [int(x) for x in read_values]
-        if (len(read_values) == 4):
+        if len(read_values) == 4:
             valid_read = True
             for i in range(4):
-                if (read_values[i] != 0xFF):
+                if read_values[i] != 0xFF:
                     valid_read = False
                     break
         else:
@@ -201,72 +210,59 @@ class KeyboardInterface():
     # ------------------------------------
     # Generic Functions
     # ------------------------------------
-    
-    def setup(self, device:device_select_e, num_columns:int=0, num_rows:int=0):
-        self.send_command(
-            [
-            int(self.commands.cmd_setup.value),
-            device.value,
-            num_columns,
-            num_rows
-            ]
-        )
+
+    def setup(self, device: device_select_e, num_columns: int = 0, num_rows: int = 0):
+        self.send_command([self.commands.cmd_setup, device, num_columns, num_rows])
 
     def stop_streaming(self):
-        self.send_command(
-            [
-            int(self.commands.cmd_stop_streaming.value),
-            ]
-        )
+        self.send_command([self.commands.cmd_stop_streaming])
 
     def stop_serial_comms(self):
-        self.send_command(
-            [
-            int(self.commands.cmd_stop_serial_comms.value),
-            ]
-        )
+        self.send_command([self.commands.cmd_stop_serial_comms])
 
     # ------------------------------------
     # IQS7220A
     # ------------------------------------
 
     def iqs7220a_ks(self):
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs7220a_ks)
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs7220a_ks])
         read_values = self.serial_conn.read(self.num_devices)
         read_values = [int(x) for x in read_values]
         return read_values
-    
-    def iqs7220a_i2c_read_single(self, device_select, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+
+    def iqs7220a_i2c_read_single(
+        self, device_select, register_addr, num_bytes, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs7220a_i2c_read_single.value),
-            device_select,
-            device_addr,
-            register_addr,
-            num_bytes
-        ])
+        self.send_command(
+            [
+                self.commands.cmd_iqs7220a_i2c_read_single,
+                device_select,
+                device_addr,
+                register_addr,
+                num_bytes,
+            ]
+        )
         read_values = self.serial_conn.read(num_bytes)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs7220a_i2c_write_single(self, device_select, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs7220a_i2c_write_single(
+        self, device_select, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs7220a_i2c_write_single.value),
+            self.commands.cmd_iqs7220a_i2c_write_single,
             device_select,
             device_addr,
             register_addr,
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
@@ -274,30 +270,34 @@ class KeyboardInterface():
         self.generic_return()
 
     def iqs7220a_i2c_read_multi(self, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs7220a_i2c_read_multi.value),
-            device_addr,
-            register_addr,
-            num_bytes
-        ])
-        read_values = self.serial_conn.read(num_bytes*self.num_devices)
+        self.send_command(
+            [
+                self.commands.cmd_iqs7220a_i2c_read_multi,
+                device_addr,
+                register_addr,
+                num_bytes,
+            ]
+        )
+        read_values = self.serial_conn.read(num_bytes * self.num_devices)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs7220a_i2c_write_multi(self, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs7220a_i2c_write_multi(
+        self, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs7220a_i2c_write_multi.value),
+            self.commands.cmd_iqs7220a_i2c_write_multi,
             device_addr,
             register_addr,
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
@@ -305,27 +305,29 @@ class KeyboardInterface():
         self.generic_return()
 
     def iqs7220a_stream_ks(self, report_interval_ms):
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs7220a_stream_ks.value),
-            report_interval_ms
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs7220a_stream_ks, report_interval_ms])
         self.generic_return()
 
-    def iqs7220a_stream_i2c_read_single(self, report_interval_ms, device_select, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs7220a_stream_i2c_read_single(
+        self,
+        report_interval_ms,
+        device_select,
+        register_addr: list,
+        num_bytes: list,
+        device_addr=None,
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs7220a_stream_i2c_read_single.value),
+            self.commands.cmd_iqs7220a_stream_i2c_read_single,
             report_interval_ms,
             device_select,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x)
@@ -334,18 +336,20 @@ class KeyboardInterface():
         self.send_command(command)
         self.generic_return()
 
-    def iqs7220a_stream_i2c_read_multi(self, report_interval_ms, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs7220a_stream_i2c_read_multi(
+        self, report_interval_ms, register_addr: list, num_bytes: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs7220a_stream_i2c_read_multi.value),
+            self.commands.cmd_iqs7220a_stream_i2c_read_multi,
             report_interval_ms,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x)
@@ -359,42 +363,44 @@ class KeyboardInterface():
     # ------------------------------------
 
     def iqs7320a_ks(self):
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs7320a_ks)
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs7320a_ks])
         read_values = self.serial_conn.read(self.num_devices)
         read_values = [int(x) for x in read_values]
         return read_values
-    
-    def iqs7320a_i2c_read_single(self, device_select, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+
+    def iqs7320a_i2c_read_single(
+        self, device_select, register_addr, num_bytes, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs7320a_i2c_read_single.value),
-            device_select,
-            device_addr,
-            register_addr,
-            num_bytes
-        ])
+        self.send_command(
+            [
+                self.commands.cmd_iqs7320a_i2c_read_single,
+                device_select,
+                device_addr,
+                register_addr,
+                num_bytes,
+            ]
+        )
         read_values = self.serial_conn.read(num_bytes)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs7320a_i2c_write_single(self, device_select, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs7320a_i2c_write_single(
+        self, device_select, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs7320a_i2c_write_single.value),
+            self.commands.cmd_iqs7320a_i2c_write_single,
             device_select,
             device_addr,
             register_addr,
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
@@ -402,84 +408,81 @@ class KeyboardInterface():
         self.generic_return()
 
     def iqs7320a_i2c_read_multi(self, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs7320a_i2c_read_multi.value),
-            device_addr,
-            register_addr,
-            num_bytes
-        ])
-        read_values = self.serial_conn.read(num_bytes*self.num_devices)
+        self.send_command(
+            [
+                self.commands.cmd_iqs7320a_i2c_read_multi,
+                device_addr,
+                register_addr,
+                num_bytes,
+            ]
+        )
+
+        read_values = self.serial_conn.read(num_bytes * self.num_devices)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs7320a_i2c_write_multi(self, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs7320a_i2c_write_multi(
+        self, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs7320a_i2c_write_multi.value),
+            self.commands.cmd_iqs7320a_i2c_write_multi,
             device_addr,
             register_addr,
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
         self.send_command(command)
         self.generic_return()
 
-    def iqs7320a_autonomous(self, selection_bool:bool):
-        if selection_bool == True:
+    def iqs7320a_autonomous(self, selection_bool: bool):
+        if selection_bool is True:
             selection = 2
-        elif selection_bool == False:
+        elif selection_bool is False:
             selection = 1
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs7320a_autonomous_mode.value),
-            selection
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs7320a_autonomous_mode, selection])
         self.generic_return()
 
-    def iqs7320a_standby(self, selection_bool:bool):
-        if selection_bool == True:
+    def iqs7320a_standby(self, selection_bool: bool):
+        if selection_bool is True:
             selection = 2
-        elif selection_bool == False:
+        elif selection_bool is False:
             selection = 1
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs7320a_standby_mode.value),
-            selection
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs7320a_standby_mode, selection])
         self.generic_return()
 
     def iqs7320a_stream_ks(self, report_interval_ms):
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs7320a_stream_ks.value),
-            report_interval_ms
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs7320a_stream_ks, report_interval_ms])
         self.generic_return()
 
-    def iqs7320a_stream_i2c_read_single(self, report_interval_ms, device_select, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs7320a_stream_i2c_read_single(
+        self,
+        report_interval_ms,
+        device_select,
+        register_addr: list,
+        num_bytes: list,
+        device_addr=None,
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs7320a_stream_i2c_read_single.value),
+            self.commands.cmd_iqs7320a_stream_i2c_read_single,
             report_interval_ms,
             device_select,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x)
@@ -488,18 +491,20 @@ class KeyboardInterface():
         self.send_command(command)
         self.generic_return()
 
-    def iqs7320a_stream_i2c_read_multi(self, report_interval_ms, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs7320a_stream_i2c_read_multi(
+        self, report_interval_ms, register_addr: list, num_bytes: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs7320a_stream_i2c_read_multi.value),
+            self.commands.cmd_iqs7320a_stream_i2c_read_multi,
             report_interval_ms,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x)
@@ -513,42 +518,46 @@ class KeyboardInterface():
     # ------------------------------------
 
     def iqs9320_i2c_read_single(self, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs9320_i2c_read_single.value),
-            device_addr,
-            register_addr & 0xFF,
-            (register_addr & 0xFF00) >> 8,
-            num_bytes
-        ])
+        self.send_command(
+            [
+                self.commands.cmd_iqs9320_i2c_read_single,
+                device_addr,
+                register_addr & 0xFF,
+                (register_addr & 0xFF00) >> 8,
+                num_bytes,
+            ]
+        )
         read_values = self.serial_conn.read(num_bytes)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs9320_i2c_write_single(self, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs9320_i2c_write_single(
+        self, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs9320_i2c_write_single.value),
+            self.commands.cmd_iqs9320_i2c_write_single,
             device_addr,
             register_addr & 0xFF,
             ((register_addr & 0xFF00) >> 8),
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
         self.send_command(command)
         self.generic_return()
 
-    def iqs9320_i2c_read_multi(self, device_addresses:list, register_addr, num_bytes):
+    def iqs9320_i2c_read_multi(self, device_addresses: list, register_addr, num_bytes):
         command = [
-            int(self.commands.cmd_iqs9320_i2c_read_multi.value),
-            len(device_addresses)
+            self.commands.cmd_iqs9320_i2c_read_multi,
+            len(device_addresses),
         ]
         for addr in device_addresses:
             command.append(addr)
@@ -556,14 +565,16 @@ class KeyboardInterface():
         command.append((register_addr & 0xFF00) >> 8)
         command.append(num_bytes)
         self.send_command(command)
-        read_values = self.serial_conn.read(num_bytes*len(device_addresses))
+        read_values = self.serial_conn.read(num_bytes * len(device_addresses))
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs9320_i2c_write_multi(self, device_addresses:list, register_addr, bytes_array:list):
+    def iqs9320_i2c_write_multi(
+        self, device_addresses: list, register_addr, bytes_array: list
+    ):
         command = [
-            int(self.commands.cmd_iqs9320_i2c_write_multi.value),
-            len(device_addresses)
+            self.commands.cmd_iqs9320_i2c_write_multi,
+            len(device_addresses),
         ]
         for addr in device_addresses:
             command.append(addr)
@@ -575,18 +586,20 @@ class KeyboardInterface():
         self.send_command(command)
         self.generic_return()
 
-    def iqs9320_stream_i2c_read_single(self, report_interval_ms, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs9320_stream_i2c_read_single(
+        self, report_interval_ms, register_addr: list, num_bytes: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs9320_stream_i2c_read_single.value),
+            self.commands.cmd_iqs9320_stream_i2c_read_single,
             report_interval_ms,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x & 0xFF)
@@ -596,13 +609,19 @@ class KeyboardInterface():
         self.send_command(command)
         self.generic_return()
 
-    def iqs9320_stream_i2c_read_multi(self, report_interval_ms, device_addr:list, register_addr:list, num_bytes:list):
-        if (len(register_addr) != len(num_bytes)):
+    def iqs9320_stream_i2c_read_multi(
+        self,
+        report_interval_ms,
+        device_addr: list,
+        register_addr: list,
+        num_bytes: list,
+    ):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs9320_stream_i2c_read_multi.value),
+            self.commands.cmd_iqs9320_stream_i2c_read_multi,
             report_interval_ms,
-            len(device_addr)
+            len(device_addr),
         ]
         for x in device_addr:
             command.append(x)
@@ -620,45 +639,46 @@ class KeyboardInterface():
     # ------------------------------------
 
     def iqs9320_ks(self, num_channels):
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs9320_ks.value),
-            int(num_channels)
-            ]
-        )
-        read_values = self.serial_conn.read(self.num_devices*3)
+        self.send_command([self.commands.cmd_iqs9320_ks, int(num_channels)])
+        read_values = self.serial_conn.read(self.num_devices * 3)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs9320_ks_i2c_read_single(self, device_select, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+    def iqs9320_ks_i2c_read_single(
+        self, device_select, register_addr, num_bytes, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs9320_ks_i2c_read_single.value),
-            device_select,
-            device_addr,
-            register_addr & 0xFF,
-            (register_addr & 0xFF00) >> 8,
-            num_bytes
-        ])
+        self.send_command(
+            [
+                self.commands.cmd_iqs9320_ks_i2c_read_single,
+                device_select,
+                device_addr,
+                register_addr & 0xFF,
+                (register_addr & 0xFF00) >> 8,
+                num_bytes,
+            ]
+        )
         read_values = self.serial_conn.read(num_bytes)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs9320_ks_i2c_write_single(self, device_select, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs9320_ks_i2c_write_single(
+        self, device_select, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs9320_ks_i2c_write_single.value),
+            self.commands.cmd_iqs9320_ks_i2c_write_single,
             device_select,
             device_addr,
             register_addr & 0xFF,
             (register_addr & 0xFF00) >> 8,
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
@@ -666,74 +686,80 @@ class KeyboardInterface():
         self.generic_return()
 
     def iqs9320_ks_i2c_read_multi(self, register_addr, num_bytes, device_addr=None):
-        if device_addr == None:
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        self.send_command([
-            int(self.commands.cmd_iqs9320_ks_i2c_read_multi.value),
-            device_addr,
-            register_addr & 0xFF,
-            (register_addr & 0xFF00) >> 8,
-            num_bytes
-        ])
-        read_values = self.serial_conn.read(num_bytes*self.num_devices)
+        self.send_command(
+            [
+                self.commands.cmd_iqs9320_ks_i2c_read_multi,
+                device_addr,
+                register_addr & 0xFF,
+                (register_addr & 0xFF00) >> 8,
+                num_bytes,
+            ]
+        )
+        read_values = self.serial_conn.read(num_bytes * self.num_devices)
         read_values = [int(x) for x in read_values]
         return read_values
 
-    def iqs9320_ks_i2c_write_multi(self, register_addr, bytes_array:list, device_addr=None):
-        if device_addr == None:
+    def iqs9320_ks_i2c_write_multi(
+        self, register_addr, bytes_array: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
         command = [
-            int(self.commands.cmd_iqs9320_ks_i2c_write_multi.value),
+            self.commands.cmd_iqs9320_ks_i2c_write_multi,
             device_addr,
             register_addr & 0xFF,
             (register_addr & 0xFF00) >> 8,
-            len(bytes_array)
+            len(bytes_array),
         ]
         for byte in bytes_array:
             command.append(byte)
         self.send_command(command)
         self.generic_return()
 
-    def iqs9320_ks_standby(self, selection_bool:bool):
-        if selection_bool == True:
+    def iqs9320_ks_standby(self, selection_bool: bool):
+        if selection_bool is True:
             selection = 2
-        elif selection_bool == False:
+        elif selection_bool is False:
             selection = 1
-        self.send_command(
-            [
-            int(self.commands.cmd_iqs9320_ks_standby.value),
-            selection
-            ]
-        )
+        self.send_command([self.commands.cmd_iqs9320_ks_standby, selection])
         self.generic_return()
-    
+
     def iqs9320_ks_stream_ks(self, report_interval_ms, num_channels):
         self.send_command(
             [
-            int(self.commands.cmd_iqs9320_ks_stream_ks.value),
-            report_interval_ms,
-            num_channels
+                self.commands.cmd_iqs9320_ks_stream_ks,
+                report_interval_ms,
+                num_channels,
             ]
         )
         self.generic_return()
 
-    def iqs9320_ks_stream_i2c_read_single(self, report_interval_ms, device_select, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs9320_ks_stream_i2c_read_single(
+        self,
+        report_interval_ms,
+        device_select,
+        register_addr: list,
+        num_bytes: list,
+        device_addr=None,
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs9320_ks_stream_i2c_read_single.value),
+            self.commands.cmd_iqs9320_ks_stream_i2c_read_single,
             report_interval_ms,
             device_select,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x & 0xFF)
@@ -743,18 +769,20 @@ class KeyboardInterface():
         self.send_command(command)
         self.generic_return()
 
-    def iqs9320_ks_stream_i2c_read_multi(self, report_interval_ms, register_addr:list, num_bytes:list, device_addr=None):
-        if device_addr == None:
+    def iqs9320_ks_stream_i2c_read_multi(
+        self, report_interval_ms, register_addr: list, num_bytes: list, device_addr=None
+    ):
+        if device_addr is None:
             device_addr = self.device_address
-            if device_addr == None:
+            if device_addr is None:
                 raise Exception("No device address selected")
-        if (len(register_addr) != len(num_bytes)):
+        if len(register_addr) != len(num_bytes):
             raise Exception("Number of register addresses and read length is not equal")
         command = [
-            int(self.commands.cmd_iqs9320_ks_stream_i2c_read_multi.value),
+            self.commands.cmd_iqs9320_ks_stream_i2c_read_multi,
             report_interval_ms,
             device_addr,
-            len(register_addr)
+            len(register_addr),
         ]
         for x in register_addr:
             command.append(x & 0xFF)
@@ -763,5 +791,3 @@ class KeyboardInterface():
             command.append(x)
         self.send_command(command)
         self.generic_return()
-
-
